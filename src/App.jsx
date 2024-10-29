@@ -1,28 +1,67 @@
-import './App.css';
+import React from 'react'
+import Nav from "./components/Nav"
+import Main from "./components/Main"
+import Footer from "./components/Footer"
+import BlogPost from "./components/BlogPost"
+import {onSnapshot} from "firebase/firestore"
+import { notesCollection } from "./firebase"
+import Articles from "./components/Articles"
 
 function App() {
+  const [notes, setNotes] = React.useState([])
+
+  React.useEffect(() => {
+    const unsubscribe = onSnapshot(notesCollection, function (snapshot) {
+        // Sync up our local notes array with the snapshot data
+        const notesArr = snapshot.docs.map(doc => ({
+            ...doc.data(),
+            id: doc.id
+        }))
+        setNotes(notesArr)
+      })
+      return unsubscribe
+  }, [])
+
+  const [page, setPage] = React.useState('main')
+
+  function setHome(){
+    setPage("main")
+  }
+
+  function setArticles(){
+    setPage("articles")
+  }
+
+  const [currentNoteId, setCurrentNoteId] = React.useState("")
+    
+  const currentNote = notes.find(note => note.id === currentNoteId)
+
+  function setPost(id){
+    setPage("post")
+    setCurrentNoteId(id)
+  }
+
+  function pageDecider(){
+    if (page === "main"){
+      return <Main page={page}  setPost={setPost}/>
+    }else if (page === "articles"){
+      return <Articles  page={page} setPost={setPost}/>
+    }else if (page === "post" ){
+      return <BlogPost blog={currentNote} />
+    }
+  }
+
+  console.log(notes)
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src="Octocat.png" className="App-logo" alt="logo" />
-        <p>
-          GitHub Codespaces <span className="heart">♥️</span> React
-        </p>
-        <p className="small">
-          Edit <code>src/App.jsx</code> and save to reload.
-        </p>
-        <p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </p>
-      </header>
-    </div>
+    <>
+      <Nav 
+        setHome={setHome}
+        setArticles={setArticles}
+      />
+      {pageDecider()}
+      <Footer />
+      
+    </>
   );
 }
 
